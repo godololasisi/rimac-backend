@@ -1,0 +1,16 @@
+service: rimac-appointment-backend-dynamodb
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+
+custom:
+  dynamodb:
+    start:
+      port: 8000
+      inMemory: true
+      migrate: true
+      dbPath: ./dynamodb-local
+
+plugins:
+  - serverless-dynamodb-local

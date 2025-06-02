@@ -1,0 +1,128 @@
+service: rimac-appointment-backend
+frameworkVersion: "3"
+
+plugins:
+  - serverless-esbuild
+  - serverless-offline
+  - serverless-dynamodb-local
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  environment:
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1"
+    PERU_TOPIC_ARN: !Ref PeruTopic
+    CHILE_TOPIC_ARN: !Ref ChileTopic
+    EVENT_BUS_NAME: default
+    IS_OFFLINE: ${opt:isOffline, 'false'}
+
+custom:
+  dynamodb:
+    stages:
+      - dev
+    start:
+      port: 8000
+      inMemory: false
+      migrate: true
+      dbPath: ./dynamodb-local
+      jarPath: D:/Temp/rimac-appointment-backend/dynamodb-local/DynamoDBLocal.jar
+  esbuild:
+    bundle: true
+    minify: false
+    sourcemap: true
+    target: node18
+    platform: node
+    concurrency: 10
+    external: []
+
+functions:
+  appointment:
+    handler: src/handlers/appointment.handler
+    events:
+      - http:
+          method: post
+          path: appointments
+
+  getAppointments:
+    handler: src/handlers/getAppointments.handler
+    timeout: 20
+    events:
+      - http:
+          method: get
+          path: appointments/{insuredId}
+
+  appointmentPE:
+    handler: src/handlers/appointmentPE.handler
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - PeruQueue
+              - Arn
+
+  appointmentCL:
+    handler: src/handlers/appointmentCL.handler
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - ChileQueue
+              - Arn
+
+  appointmentConfirm:
+    handler: src/handlers/appointmentConfirm.handler
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - ConfirmQueue
+              - Arn
+
+resources:
+  Resources:
+    AppointmentsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: Appointments
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: insuredId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        GlobalSecondaryIndexes:
+          - IndexName: InsuredIdIndex
+            KeySchema:
+              - AttributeName: insuredId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+
+    PeruTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: PeruAppointments
+
+    ChileTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ChileAppointments
+
+    PeruQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: PeruAppointmentsQueue
+
+    ChileQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ChileAppointmentsQueue
+
+    ConfirmQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ConfirmAppointmentsQueue

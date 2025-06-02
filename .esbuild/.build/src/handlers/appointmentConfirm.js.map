@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../src/handlers/appointmentConfirm.ts"],
+  "sourcesContent": ["import { SQSEvent } from 'aws-lambda';\r\nimport { DynamoDB } from 'aws-sdk';\r\n\r\nconst dynamoDb = new DynamoDB.DocumentClient();\r\n\r\nexport const handler = async (event: SQSEvent) => {\r\n  for (const record of event.Records) {\r\n    const detail = JSON.parse(record.body);\r\n    const { appointmentId, status } = JSON.parse(detail.Detail);\r\n\r\n    console.log(`Updating appointment ${appointmentId} to status: ${status}`);\r\n\r\n    await dynamoDb.update({\r\n      TableName: 'Appointments',\r\n      Key: { id: appointmentId },\r\n      UpdateExpression: 'set #status = :status',\r\n      ExpressionAttributeNames: { '#status': 'status' },\r\n      ExpressionAttributeValues: { ':status': status },\r\n    }).promise();\r\n  }\r\n\r\n  return { statusCode: 200 };\r\n};\r\n"],
+  "mappings": ";;;;;;;;;;;;;;;;;;;;AAAA;AAAA;AAAA;AAAA;AAAA;AACA,qBAAyB;AAEzB,IAAM,WAAW,IAAI,wBAAS,eAAe;AAEtC,IAAM,UAAU,OAAO,UAAoB;AAChD,aAAW,UAAU,MAAM,SAAS;AAClC,UAAM,SAAS,KAAK,MAAM,OAAO,IAAI;AACrC,UAAM,EAAE,eAAe,OAAO,IAAI,KAAK,MAAM,OAAO,MAAM;AAE1D,YAAQ,IAAI,wBAAwB,aAAa,eAAe,MAAM,EAAE;AAExE,UAAM,SAAS,OAAO;AAAA,MACpB,WAAW;AAAA,MACX,KAAK,EAAE,IAAI,cAAc;AAAA,MACzB,kBAAkB;AAAA,MAClB,0BAA0B,EAAE,WAAW,SAAS;AAAA,MAChD,2BAA2B,EAAE,WAAW,OAAO;AAAA,IACjD,CAAC,EAAE,QAAQ;AAAA,EACb;AAEA,SAAO,EAAE,YAAY,IAAI;AAC3B;",
+  "names": []
+}
