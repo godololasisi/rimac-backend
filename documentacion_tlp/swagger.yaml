@@ -1,0 +1,75 @@
+
+openapi: 3.0.1
+info:
+  title: Rimac Appointment API
+  description: API para el agendamiento de citas médicas por país.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000/dev
+paths:
+  /appointments:
+    post:
+      summary: Registrar una solicitud de cita médica
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                insuredId:
+                  type: string
+                  example: "00012"
+                scheduleId:
+                  type: integer
+                  example: 100
+                countryISO:
+                  type: string
+                  enum: [PE, CL]
+                  example: PE
+      responses:
+        '200':
+          description: Solicitud registrada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  appointmentId:
+                    type: string
+
+  /appointments/{insuredId}:
+    get:
+      summary: Obtener todas las citas médicas de un asegurado
+      parameters:
+        - name: insuredId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "00012"
+      responses:
+        '200':
+          description: Lista de citas del asegurado
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    insuredId:
+                      type: string
+                    scheduleId:
+                      type: integer
+                    countryISO:
+                      type: string
+                    status:
+                      type: string
+                    createdAt:
+                      type: string
+                      format: date-time
